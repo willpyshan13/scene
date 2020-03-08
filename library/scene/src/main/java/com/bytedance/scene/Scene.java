@@ -119,7 +119,7 @@ public abstract class Scene implements LifecycleOwner, ViewModelStoreOwner {
 
     private Activity mActivity;
     private Context mSceneContext;
-    private LayoutInflater mLayoutInflater;
+    private SceneLayoutInflater mLayoutInflater;
     private View mView;
 
     private Scene mParentScene;
@@ -322,13 +322,13 @@ public abstract class Scene implements LifecycleOwner, ViewModelStoreOwner {
         return mLayoutInflater;
     }
 
-    protected LayoutInflater onGetLayoutInflater() {
+    private SceneLayoutInflater onGetLayoutInflater() {
         if (this.mActivity == null) {
             throw new IllegalStateException("onGetLayoutInflater() cannot be executed until the "
                     + "Scene is attached to the Activity.");
         }
 
-        return this.mActivity.getLayoutInflater().cloneInContext(requireSceneContext());
+        return new SceneLayoutInflater(requireActivity(), this);
     }
 
     /**
@@ -1058,6 +1058,9 @@ public abstract class Scene implements LifecycleOwner, ViewModelStoreOwner {
 
     /**
      * Use another theme instead of inherit from Activity theme
+     * <p>
+     * This method will modify onCreateView inflated view context, View.getContext() will return ContextWrapper instead
+     * of Activity
      */
     public final void setTheme(@StyleRes int resId) {
         if (getView() != null) {
