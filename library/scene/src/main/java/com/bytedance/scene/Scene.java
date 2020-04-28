@@ -25,13 +25,11 @@ import android.support.annotation.*;
 import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
+import android.view.*;
 
 import com.bytedance.scene.navigation.NavigationScene;
 import com.bytedance.scene.parcel.ParcelConstants;
+import com.bytedance.scene.utlity.ViewRefUtility;
 import com.bytedance.scene.utlity.SceneInternalException;
 import com.bytedance.scene.utlity.Utility;
 import com.bytedance.scene.view.SceneContextThemeWrapper;
@@ -119,7 +117,7 @@ public abstract class Scene implements LifecycleOwner, ViewModelStoreOwner {
 
     private Activity mActivity;
     private Context mSceneContext;
-    private SceneLayoutInflater mLayoutInflater;
+    private LayoutInflater mLayoutInflater;
     private View mView;
 
     private Scene mParentScene;
@@ -322,7 +320,7 @@ public abstract class Scene implements LifecycleOwner, ViewModelStoreOwner {
         return mLayoutInflater;
     }
 
-    private SceneLayoutInflater onGetLayoutInflater() {
+    protected LayoutInflater onGetLayoutInflater() {
         if (this.mActivity == null) {
             throw new IllegalStateException("onGetLayoutInflater() cannot be executed until the "
                     + "Scene is attached to the Activity.");
@@ -481,6 +479,13 @@ public abstract class Scene implements LifecycleOwner, ViewModelStoreOwner {
     /** @hide */
     @RestrictTo(LIBRARY_GROUP)
     public void dispatchDestroyView() {
+        //make sure the View which is in onTouchEvent process will receive MotionEvent.CANCEL before Scene destroyed,
+        //otherwise android framework will send it MotionEvent.CANCEL when it is removed from parent ViewGroup,
+        //but at that moment, Scene is already be destroyed
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            ViewRefUtility.cancelViewTouchTargetFromParent(this.mView);
+        }
+
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
         setState(State.NONE);
         mCalled = false;
